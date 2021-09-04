@@ -1,0 +1,8 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+	<qresource prefix="/">
+		<file alias="target_bi.png">images/target button icon.png</file>
+		<file alias="target_wi.png">images/target window icon.png</file>
+		<file>data.ini</file>
+	</qresource>
+</RCC>
