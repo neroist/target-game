@@ -38,12 +38,12 @@ class MainWindow(QMainWindow):
 	def __init__(self):
 		super().__init__()
 		
-		self.score = 0
+		self.score = 0      
 		self.time = 0
+		self.newHighScore = False
 		self.afterRestart = False
 		
-		self.settings = QSettings("Alice", "Target Game")
-		self.data = QSettings("://data.ini", QSettings.IniFormat)
+		self.settings = QSettings("Alice", "Target Game", self)
 		
 		self.setObjectName(u"MainWindow")
 		if self.settings.contains("last_pos"): self.move(self.settings.value("last_pos"))
@@ -126,15 +126,15 @@ class MainWindow(QMainWindow):
 		# update time label
 		# and increment total time
 		self.timeTimer = QTimer(self)
-		self.timeTimer.timeout.connect(self.increment)
+		self.timeTimer.timeout.connect(self.incrementTime)
 		self.timeTimer.timeout.connect(
 			lambda: self.timeLabel.setText(
 				self.tr(f"Time: {self.secsToTime(self.time)}")
 			)
 		)
 		self.timeTimer.timeout.connect(
-			lambda: self.data.setValue(
-				"total_time", self.data.value("total_time", 0, int) + 1
+			lambda: self.settings.setValue(
+				"total_time", self.settings.value("total_time", 0, int) + 1
 			)
 		)
 		self.timeTimer.start(1000)
@@ -153,7 +153,7 @@ class MainWindow(QMainWindow):
 	def secsToTime(secs: int):
 		return f"{secs // 60}:{(secs % 60):02d}"
 	
-	def increment(self):
+	def incrementTime(self):
 		self.time += 1
 	
 	def moveTargetButton(self) -> None:
@@ -167,11 +167,12 @@ class MainWindow(QMainWindow):
 		# increment score and update label and total score
 		self.score += 1
 		self.scoreLabel.setText(self.tr(f"Score: {self.score}"))
-		self.data.setValue("total_score", self.data.value("total_score", 0, int) + 1)
+		self.settings.setValue("total_score", self.settings.value("total_score", self.score, int) + 1)
 		
 		if self.afterRestart:
+			# reconnect timer slots / "resume" timer
 			self.timeTimer.timeout.connect(
-				self.increment
+				self.incrementTime
 			)
 			self.timeTimer.timeout.connect(
 				lambda: self.timeLabel.setText(
@@ -179,8 +180,8 @@ class MainWindow(QMainWindow):
 				)
 			)
 			self.timeTimer.timeout.connect(
-				lambda: self.data.setValue(
-					"total_time", self.data.value("total_time", 0, int) + 1
+				lambda: self.settings.setValue(
+					"total_time", self.settings.value("total_time", 0, int) + 1
 				)
 			)
 			self.timeTimer.start(1000)
@@ -200,48 +201,71 @@ class MainWindow(QMainWindow):
 		
 	def closeEvent(self, event):
 		self.settings.setValue("last_pos", self.pos())
-		self.settings.sync()
 		
-		self.data.sync()
+		self.settings.sync()
 	
 	def resizeEvent(self, event: QResizeEvent) -> None:
 		# center target button if game has not started yet
 		if not self.score:
 			self.center(self.targetButton)
+			
+		if self.afterRestart:
+			self.center(self.rf)
 		
 		widget = self.headerLayoutWidget
 		widget.resize(self.geometry().width() - 20, 30)
 	
 	def mousePressEvent(self, event: QMouseEvent) -> None:
+		self.settings.setValue("total_misses", self.settings.value("total_misses", 0, int) + 1)
 		self.afterRestart = True
 		
 		# set high score if score is higher than current high score
-		if self.score > self.data.value("high_score", 0, int):
-			self.data.setValue("high_score", self.score)
-			
+		if self.score > self.settings.value("high_score", 0, int):
+			self.newHighScore = True
+			self.settings.setValue("high_score", self.score)
 			
 		# center target button in window
 		self.center(self.targetButton)
+		
+		# center restart frame
+		self.center(self.rf)
+		
+		# sync settings so stats are accurate
+		self.settings.sync()
+		
+		# get user stats
+		total_score = self.settings.value('total_score', self.score, int)
+		total_misses = self.settings.value('total_misses', 1, type=int)
+		total_time = self.settings.value('total_time', 1, type=int)
+		high_score = self.settings.value('high_score', self.score, int)
+		
+		# set restart frame stats
+		self.rf.timeLabel.setText(self.tr(self.timeLabel.text()))
+		self.rf.ttimeLabel.setText(self.tr(f"Total Time: {self.secsToTime(total_time)}"))
+		self.rf.scoreLabel.setText(self.tr(self.scoreLabel.text()))
+		self.rf.tscoreLabel.setText(self.tr(f"Total Score: {total_score}"))
+		self.rf.SPSLabel.setText(self.tr(f"Score Per Second: {round(self.score/self.time, 2)}"))
+		self.rf.tSPSLabel.setText(self.tr(f"Total Score Per Second: {round(total_score/total_time, 2)}"))
+		self.rf.taccuracyLabel.setText(self.tr(f"Accuracy: {round(total_score/total_misses, 2)}%"))
+		
+		if not self.newHighScore:
+			self.rf.hscoreLabel.setText(self.tr(f"High Score: {high_score}"))
+		else:
+			self.rf.hscoreLabel.setText(self.tr(f'High Score: {high_score} <b><span style="color: red">*NEW*</><b/'))
+			
+		self.newHighScore = False
 		
 		# reset score
 		self.score = 0
 		
 		# reset time
-		# and "pause" time timer
 		self.time = 0
 		
-		try: self.timeTimer.timeout.disconnect()
-		except: pass
-		
-		# center restart frame
-		self.center(self.rf)
-		
-		# set restart frame stats
-		self.rf.timeLabel.setText(self.tr(self.timeLabel.text()))
-		self.rf.ttimeLabel.setText(self.tr(f"Total Time: {self.secsToTime(self.data.value('total_time', 1, type=int))}"))
-		self.rf.scoreLabel.setText(self.tr(self.scoreLabel.text()))
-		self.rf.tscoreLabel.setText(self.tr(f"Total Score: {self.data.value('total_score', self.score, int)}"))
-		self.rf.hscoreLabel.setText(self.tr(f"High Score: {self.data.value('high_score', self.score, int)}"))
+		# and "pause" time timer
+		try:
+			self.timeTimer.timeout.disconnect()
+		except:
+			pass
 		
 		# fade in/show restart frame
 		self.fadeInRF()
@@ -255,14 +279,18 @@ if __name__ == '__main__':
 	
 	app = QApplication(argv)
 	app.setApplicationName("Target Game")
-	app.setApplicationVersion("1.0.0")
+	app.setApplicationVersion("1.1.0")
 	app.setApplicationDisplayName("Target Game")
 	
 	# show window icon on taskbar. see https://stackoverflow.com/a/1552105/14586140 for details
-	ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(u'alice.target_game.v1.0.0')  # arbitrary string
+	ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(u'alice.target_game.v1.1.0')  # arbitrary string
 	
 	# initialize main window and set a variable to it so doesnt get garbage collected
 	window = MainWindow()
 	
 	# run app and exit with proper error code
 	exit(app.exec())
+	
+	# TODO add "+1" animation when target button is clicked
+	# TODO add pause feature
+	# TODO have a random chance to gain 2 points when target button is clicked

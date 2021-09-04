@@ -18,12 +18,6 @@ class RestartFrame(QFrame):
 	def __init__(self, parent: QWidget = None):
 		super().__init__(parent)
 		
-		self.score = 0
-		self.hscore = 0
-		self.tscore = 0
-		self.time = 0
-		self.ttime = 0
-		
 		self.setObjectName(u"Frame")
 		self.resize(400, 300)
 		self.setStyleSheet("background-color: rgb(220, 220, 220)")
@@ -51,35 +45,56 @@ class RestartFrame(QFrame):
 		
 		self.verticalLayout.addWidget(self.statsLabel)
 		
-		self.scoreLabel = QLabel(self)
+		self.scoreLabel = QLabel(self.tr(u"Score: 0"), self)
 		self.scoreLabel.setObjectName(u"scoreLabel")
 		self.scoreLabel.setFont(font2 := QFont(u"Segoe UI", 10))
 		self.scoreLabel.setIndent(10)
 		
 		self.verticalLayout.addWidget(self.scoreLabel)
 		
-		self.hscoreLabel = QLabel(self)
+		self.hscoreLabel = QLabel(self.tr(u"High Score: 0"), self)
 		self.hscoreLabel.setObjectName(u"hscoreLabel")
 		self.hscoreLabel.setFont(font2)
 		self.hscoreLabel.setIndent(10)
 		
 		self.verticalLayout.addWidget(self.hscoreLabel)
 		
-		self.tscoreLabel = QLabel(self)
+		self.tscoreLabel = QLabel(self.tr(u"Total Score: 0"), self)
 		self.tscoreLabel.setObjectName(u"tscoreLabel")
 		self.tscoreLabel.setFont(font2)
 		self.tscoreLabel.setIndent(10)
 		
 		self.verticalLayout.addWidget(self.tscoreLabel)
 		
-		self.timeLabel = QLabel(self)
+		self.SPSLabel = QLabel(self.tr(u"Score Per Second: 0"), self)
+		self.SPSLabel.setObjectName(u"accuracyLabel")
+		self.SPSLabel.setFont(font2)
+		self.SPSLabel.setIndent(10)
+		
+		self.verticalLayout.addWidget(self.SPSLabel)
+		
+		self.tSPSLabel = QLabel(self.tr(u"Total Score Per Second: 0"), self)
+		self.tSPSLabel.setObjectName(u"taccuracyLabel")
+		self.tSPSLabel.setFont(font2)
+		self.tSPSLabel.setIndent(10)
+		
+		self.verticalLayout.addWidget(self.tSPSLabel)
+		
+		self.taccuracyLabel = QLabel(self.tr(u"Total Accuracy: 0"), self)
+		self.taccuracyLabel.setObjectName(u"taccuracyLabel")
+		self.taccuracyLabel.setFont(font2)
+		self.taccuracyLabel.setIndent(10)
+		
+		self.verticalLayout.addWidget(self.taccuracyLabel)
+		
+		self.timeLabel = QLabel(self.tr(u"Time: 0"), self)
 		self.timeLabel.setObjectName(u"timeLabel")
 		self.timeLabel.setFont(font2)
 		self.timeLabel.setIndent(10)
 		
 		self.verticalLayout.addWidget(self.timeLabel)
 		
-		self.ttimeLabel = QLabel(self)
+		self.ttimeLabel = QLabel(self.tr(u"Total Time: 0"), self)
 		self.ttimeLabel.setObjectName(u"ttimeLabel")
 		self.ttimeLabel.setFont(font2)
 		self.ttimeLabel.setIndent(10)
@@ -91,8 +106,6 @@ class RestartFrame(QFrame):
 		self.restartButton.clicked.connect(self.fadeOut)
 		
 		self.verticalLayout.addWidget(self.restartButton)
-		
-		self.retranslateUi()
 	
 	def fadeOut(self):
 		effect = QGraphicsOpacityEffect(self)
@@ -105,14 +118,5 @@ class RestartFrame(QFrame):
 		
 		self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
 		self.parent().centralwidget.setEnabled(True)
-		self.parent().scoreLabel.setText("Score: 0")
-		self.parent().timeLabel.setText("Time: 0:00")
-	
-	def retranslateUi(self):
-		# self.setWindowTitle(QCoreApplication.translate("Frame", u"Frame", None))
-		self.scoreLabel.setText(QCoreApplication.translate("Frame", f"Score: {self.score}", None))
-		self.hscoreLabel.setText(QCoreApplication.translate("Frame", f"High Score: {self.hscore}", None))
-		self.tscoreLabel.setText(QCoreApplication.translate("Frame", f"Total Score: {self.tscore}", None))
-		self.timeLabel.setText(QCoreApplication.translate("Frame", f"Time: {self.time}", None))
-		self.ttimeLabel.setText(QCoreApplication.translate("Frame", f"Total Time: {self.ttime}", None))
-		self.restartButton.setText(QCoreApplication.translate("Frame", u"Restart", None))
+		self.parent().scoreLabel.setText(self.tr(u"Score: 0"))
+		self.parent().timeLabel.setText(self.tr(u"Time: 0:00"))
