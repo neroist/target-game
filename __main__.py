@@ -71,7 +71,7 @@ class MainWindow(QMainWindow):
 		self.scoreLabel.setSizePolicy(sizePolicy)
 		self.scoreLabel.setFont(QFont(u"Segoe UI", 16))
 		self.scoreLabel.setAlignment(Qt.AlignCenter)
-		self.scoreLabel.setTextInteractionFlags(Qt.TextBrowserInteraction)
+		self.scoreLabel.setAttribute(Qt.WA_TransparentForMouseEvents)
 		self.headerLayout.addWidget(self.scoreLabel)
 		
 		self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
@@ -83,24 +83,23 @@ class MainWindow(QMainWindow):
 		self.timeLabel.setSizePolicy(sizePolicy)
 		self.timeLabel.setFont(QFont(u"Segoe UI", 16))
 		self.timeLabel.setAlignment(Qt.AlignCenter)
-		self.timeLabel.setTextInteractionFlags(Qt.TextBrowserInteraction)
+		self.timeLabel.setAttribute(Qt.WA_TransparentForMouseEvents)
 		self.headerLayout.addWidget(self.timeLabel)
 		
 		self.targetButton = QPushButton(self.centralwidget)
 		self.targetButton.setObjectName(u"targetButton")
 		self.targetButton.setGeometry(
 			QRect(
-				(self.size().width() - 80) // 2,
-				(self.size().height() - 80) // 2,
-				80,
-				80
+				(self.size().width() - 80) // 2, (self.size().height() - 80) // 2, 80, 80
 			)
 		)
 		icon = QIcon()
-		icon.addFile(u":/target_bi.png", QSize(), QIcon.Normal, QIcon.Off)
+		icon.addFile(u"://target_bi.png", QSize(), QIcon.Normal, QIcon.Off)
 		self.targetButton.setIcon(icon)
-		self.targetButton.setIconSize(QSize(77, 77))
+		self.targetButton.setIconSize(QSize(80, 80))
 		self.targetButton.setFlat(True)
+		# so the player can't just focus onto the target button and spam the space bar to farm points
+		self.targetButton.setFocusPolicy(Qt.NoFocus)
 		self.targetButton.clicked.connect(self.moveTargetButton)
 		
 		self.rf = RestartFrame(self)
@@ -294,3 +293,4 @@ if __name__ == '__main__':
 	# TODO add "+1" animation when target button is clicked
 	# TODO add pause feature
 	# TODO have a random chance to gain 2 points when target button is clicked
+	# TODO when the target button moves to a new position, its movement should be animated
