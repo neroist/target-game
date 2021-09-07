@@ -1,7 +1,9 @@
-import random
+import random, secrets
 
 from PySide6.QtCore import (
 	QPropertyAnimation,
+	QVariantAnimation,
+	QEasingCurve,
 	QSettings,
 	QTimer,
 	QPoint,
@@ -23,8 +25,6 @@ from PySide6.QtWidgets import (
 	QSpacerItem,
 	QSizePolicy,
 	QHBoxLayout,
-	QStatusBar,
-	QMenuBar,
 	QWidget,
 	QLabel
 )
@@ -112,15 +112,6 @@ class MainWindow(QMainWindow):
 		
 		self.setCentralWidget(self.centralwidget)
 		
-		self.menubar = QMenuBar(self)
-		self.menubar.setObjectName(u"menubar")
-		self.menubar.setGeometry(QRect(0, 0, 800, 21))
-		self.setMenuBar(self.menubar)
-		
-		self.statusbar = QStatusBar(self)
-		self.statusbar.setObjectName(u"statusbar")
-		self.setStatusBar(self.statusbar)
-		
 		# timer to increment self.time var
 		# update time label
 		# and increment total time
@@ -140,7 +131,8 @@ class MainWindow(QMainWindow):
 		
 		self.show()
 		
-	def center(self, widget: QWidget):
+	@staticmethod
+	def center(widget: QWidget):
 		parent = widget.parent()
 		
 		widget.move(
@@ -161,10 +153,18 @@ class MainWindow(QMainWindow):
 		y = random.randint(0, self.height() - 80)  # same for the height
 		
 		# move button to random point on window
-		self.targetButton.move(QPoint(x, y))
+		ani = QVariantAnimation(self.targetButton)
+		ani.setDuration(150)
+		ani.setStartValue(self.targetButton.pos())
+		ani.setEndValue(QPoint(x, y))
+		ani.valueChanged.connect(lambda pos: self.targetButton.move(pos))
+		ani.setEasingCurve(QEasingCurve.OutSine)  # Alternatives: NCurveTypes, TCBSpline, BezierSpline, "Out*"
+		ani.start()
+		
+		# self.targetButton.move(QPoint(x, y))
 		
 		# increment score and update label and total score
-		self.score += 1
+		self.score += 2 if secrets.randbelow(50) == 0 else 1  # a 1/50 chance to get 2 points instead of 1
 		self.scoreLabel.setText(self.tr(f"Score: {self.score}"))
 		self.settings.setValue("total_score", self.settings.value("total_score", self.score, int) + 1)
 		
@@ -193,8 +193,9 @@ class MainWindow(QMainWindow):
 		ani = QPropertyAnimation(effect, b"opacity", self.rf)
 		ani.setStartValue(0.0)
 		ani.setEndValue(1.0)
-		ani.valueChanged.connect(lambda _: self.rf.setGraphicsEffect(effect))
-		ani.start(QPropertyAnimation.KeepWhenStopped)
+		
+		self.rf.setGraphicsEffect(effect)
+		ani.start()
 		
 		self.rf.setAttribute(Qt.WA_TransparentForMouseEvents, False)
 		
@@ -218,15 +219,21 @@ class MainWindow(QMainWindow):
 		self.settings.setValue("total_misses", self.settings.value("total_misses", 0, int) + 1)
 		self.afterRestart = True
 		
+		if self.score > self.settings.value("high_score", 0, int):
+			self.settings.setValue("high_score", self.score)
+		
+		# if restart frame is visible ignore clicks
+		if not self.centralwidget.isEnabled():
+			event.ignore()
+			return
+		
 		# set high score if score is higher than current high score
 		if self.score > self.settings.value("high_score", 0, int):
 			self.newHighScore = True
 			self.settings.setValue("high_score", self.score)
 			
-		# center target button in window
+		# center target button and restart frame in window
 		self.center(self.targetButton)
-		
-		# center restart frame
 		self.center(self.rf)
 		
 		# sync settings so stats are accurate
@@ -239,18 +246,40 @@ class MainWindow(QMainWindow):
 		high_score = self.settings.value('high_score', self.score, int)
 		
 		# set restart frame stats
-		self.rf.timeLabel.setText(self.tr(self.timeLabel.text()))
-		self.rf.ttimeLabel.setText(self.tr(f"Total Time: {self.secsToTime(total_time)}"))
-		self.rf.scoreLabel.setText(self.tr(self.scoreLabel.text()))
-		self.rf.tscoreLabel.setText(self.tr(f"Total Score: {total_score}"))
-		self.rf.SPSLabel.setText(self.tr(f"Score Per Second: {round(self.score/self.time, 2)}"))
-		self.rf.tSPSLabel.setText(self.tr(f"Total Score Per Second: {round(total_score/total_time, 2)}"))
-		self.rf.taccuracyLabel.setText(self.tr(f"Accuracy: {round(total_score/total_misses, 2)}%"))
+		self.rf.timeLabel.setText(
+			self.tr(self.timeLabel.text())
+		)
+		self.rf.ttimeLabel.setText(
+			self.tr(f"Total Time: {self.secsToTime(total_time)}")
+		)
+		self.rf.scoreLabel.setText(
+			self.tr(self.scoreLabel.text())
+		)
+		self.rf.tscoreLabel.setText(
+			self.tr(f"Total Score: {total_score}")
+		)
+		self.rf.SPSLabel.setText(
+			self.tr(
+				f"Score Per Second: {round(self.score / (self.time if self.time else 1), 2)}"  # to avoid division by zero error
+			)  
+		)
+		self.rf.tSPSLabel.setText(
+			self.tr(
+				f"Total Score Per Second: {round(total_score / (total_time if total_time else 1), 2)}"  # here aswell
+			)
+		)
+		self.rf.taccuracyLabel.setText(
+			self.tr(f"Accuracy: {round(total_score / total_misses, 2)}")
+		)
 		
 		if not self.newHighScore:
-			self.rf.hscoreLabel.setText(self.tr(f"High Score: {high_score}"))
+			self.rf.hscoreLabel.setText(
+				self.tr(f"High Score: {high_score}")
+			)
 		else:
-			self.rf.hscoreLabel.setText(self.tr(f'High Score: {high_score} <b><span style="color: red">*NEW*</><b/'))
+			self.rf.hscoreLabel.setText(
+				self.tr(f'High Score: {high_score} <b><span style="color: red">*NEW*</span></b>')  # QLabels support HTML
+			)
 			
 		self.newHighScore = False
 		
@@ -261,10 +290,8 @@ class MainWindow(QMainWindow):
 		self.time = 0
 		
 		# and "pause" time timer
-		try:
-			self.timeTimer.timeout.disconnect()
-		except:
-			pass
+		try: self.timeTimer.timeout.disconnect()
+		except Exception as err: print(err)
 		
 		# fade in/show restart frame
 		self.fadeInRF()

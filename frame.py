@@ -101,8 +101,21 @@ class RestartFrame(QFrame):
 		
 		self.verticalLayout.addWidget(self.ttimeLabel)
 		
+		for i in (
+				self.scoreLabel,
+				self.hscoreLabel,
+				self.tscoreLabel,
+				self.SPSLabel,
+				self.tSPSLabel,
+				self.taccuracyLabel,
+				self.timeLabel,
+				self.ttimeLabel
+		): i.setTextInteractionFlags(Qt.TextBrowserInteraction)
+		
 		self.restartButton = QPushButton(self.tr(u"Restart"), self)
 		self.restartButton.setObjectName(u"restartButton")
+		self.restartButton.setDefault(True)
+		self.restartButton.setCursor(Qt.PointingHandCursor)
 		self.restartButton.clicked.connect(self.fadeOut)
 		
 		self.verticalLayout.addWidget(self.restartButton)
@@ -113,7 +126,8 @@ class RestartFrame(QFrame):
 		animation = QPropertyAnimation(effect, b'opacity', self)
 		animation.setStartValue(1.0)
 		animation.setEndValue(0.0)
-		effect.opacityChanged.connect(lambda _: self.setGraphicsEffect(effect))
+		#effect.opacityChanged.connect(lambda _: self.setGraphicsEffect(effect))
+		self.setGraphicsEffect(effect)
 		animation.start(QPropertyAnimation.KeepWhenStopped)
 		
 		self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
