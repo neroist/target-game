@@ -309,7 +309,7 @@ if __name__ == '__main__':
 	app.setApplicationDisplayName("Target Game")
 	
 	# show window icon on taskbar. see https://stackoverflow.com/a/1552105/14586140 for details
-	ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(u'alice.target_game.v1.1.0')  # arbitrary string
+	ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(u'jasmine.target_game.v1.1.0')  # arbitrary string
 	
 	# initialize main window and set a variable to it so doesnt get garbage collected
 	window = MainWindow()
